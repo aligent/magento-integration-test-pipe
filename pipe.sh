@@ -22,7 +22,7 @@ run_integration_tests () {
 }
 
 run_rest_api_tests () {
-  mysql -h mariadb -uroot -prootpassword -e "show databases;CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO 'user'@'%';FLUSH PRIVILEGES;"
+  mysql -h host.docker.internal -uroot -prootpassword -e "show databases;CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO 'user'@'%';FLUSH PRIVILEGES;"
   composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
   cd magento2
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
