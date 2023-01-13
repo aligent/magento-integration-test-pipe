@@ -1,0 +1,22 @@
+services:
+    elasticsearch:
+        image: magento/magento-cloud-docker-elasticsearch:7.11-1.3.2
+        environment:
+            ES_SETTING_DISCOVERY_TYPE: single-node
+            ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+    mariadb:
+        image: mariadb:10.4
+        environment:
+            MYSQL_DATABASE: magento_integration_tests
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+            MYSQL_ROOT_PASSWORD: rootpassword
+    rabbitmq:
+        image: rabbitmq:3.9-management
+        environment:
+            RABBITMQ_DEFAULT_USER: guest
+            RABBITMQ_DEFAULT_PASS: guest
+    magento:
+        build: .
+        entrypoint: /bin/ash
+        tty: true
