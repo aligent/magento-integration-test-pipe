@@ -67,6 +67,7 @@ run_graphql_api_tests () {
   sed -i 's#http://magento.url#http://127.0.0.1:8082/index.php/#' phpunit_graphql.xml
   sed -i 's/value="admin"/value="Test Webservice User"/' phpunit_graphql.xml
   sed -i 's/value="123123q"/value="Test Webservice API key"/' phpunit_graphql.xml
+  sed -i 's,value="config/install-config-mysql.php",value="config/install-config-mysql-graphql.php",' phpunit_graphql.xml
 
   sed -i "s,http://localhost/,http://127.0.0.1:8082/index.php/," config/install-config-mysql-graphql.php
   sed -i "s/'db-host'                      => 'localhost'/'db-host' => 'host.docker.internal'/" config/install-config-mysql-graphql.php
