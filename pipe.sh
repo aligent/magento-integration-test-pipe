@@ -4,9 +4,17 @@ set -e
 
 TYPE=${TYPE:="integration"}
 
+# Database defaults
+DATABASE_USERNAME=${DATABASE_USERNAME:="user"}
+DATABASE_ROOTPASSWORD=${DATABASE_ROOTPASSWORD:="rootpassword"}
+
 run_integration_tests () {
-  composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
-  cd magento2
+  if [ ! -f "composer.lock" ]; then
+    echo "composer.lock does not exist."
+    composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    cd magento2
+  fi
+
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -22,9 +30,14 @@ run_integration_tests () {
 }
 
 run_rest_api_tests () {
-  mysql -h host.docker.internal -uroot -prootpassword -e "show databases;CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO 'user'@'%';FLUSH PRIVILEGES;"
-  composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
-  cd magento2
+  if [ ! -f "composer.lock" ]; then
+    echo "composer.lock does not exist."
+    composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    cd magento2
+  fi
+
+  mysql -h host.docker.internal -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
+
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -50,10 +63,15 @@ run_rest_api_tests () {
   vendor/bin/phpunit -c $(pwd)/dev/tests/api-functional/phpunit_rest.xml vendor/magento/magento2-base/dev/tests/api-functional/testsuite/Magento/Directory/Api/CurrencyInformationAcquirerTest.php
 }
 
-run_graphql_api_tests () {
-  mysql -h host.docker.internal -uroot -prootpassword -e "show databases;CREATE DATABASE IF NOT EXISTS magento_graphql_tests;GRANT ALL ON magento_graphql_tests.* TO 'user'@'%';FLUSH PRIVILEGES;"
-  composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
-  cd magento2
+run_graphql_tests () {
+  if [ ! -f "composer.lock" ]; then
+    echo "composer.lock does not exist."
+    composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    cd magento2
+  fi
+
+  mysql -h host.docker.internal -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_graphql_tests;GRANT ALL ON magento_graphql_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
+
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -87,12 +105,12 @@ case $TYPE in
     run_integration_tests
     ;;
 
-  rest-functional)
+  rest)
     run_rest_api_tests
     ;;
 
-  graphql-functional)
-    run_graphql_api_tests
+  graphql)
+    run_graphql_tests
     ;;
 
   *)
