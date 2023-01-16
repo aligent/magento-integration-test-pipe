@@ -29,16 +29,12 @@ run_integration_tests () {
   sed -i "s/'elasticsearch-host' => 'localhost'/'elasticsearch-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
   sed -i "s/'amqp-host' => 'localhost'/'amqp-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
 
-  if grep -q "product-enterprise-edition" ../../../composer.json; then
-    echo "Found enterprise edition"
-
-    # Add extra configuration not available in enterprise edition
-    sed -i "/^];/i 'consumers-wait-for-messages' => '0'," etc/install-config-mysql.php.dist
-    sed -i "/^];/i 'search-engine' => 'elasticsearch7'," etc/install-config-mysql.php.dist
-    sed -i "/^];/i 'elasticsearch-host' => 'host.docker.internal'," etc/install-config-mysql.php.dist
-    sed -i "/^];/i 'elasticsearch-port' => 9200," etc/install-config-mysql.php.dist
-    cat etc/install-config-mysql.php.dist
-  fi
+  # Add extra configuration not available in enterprise edition
+  sed -i "/^];/i 'consumers-wait-for-messages' => '0'," etc/install-config-mysql.php.dist
+  sed -i "/^];/i 'search-engine' => 'elasticsearch7'," etc/install-config-mysql.php.dist
+  sed -i "/^];/i 'elasticsearch-host' => 'host.docker.internal'," etc/install-config-mysql.php.dist
+  sed -i "/^];/i 'elasticsearch-port' => 9200," etc/install-config-mysql.php.dist
+  cat etc/install-config-mysql.php.dist
 
   php ../../../vendor/bin/phpunit ../../../vendor/magento/magento2-base/dev/tests/integration/testsuite/Magento/Framework/MessageQueue/TopologyTest.php
 }
