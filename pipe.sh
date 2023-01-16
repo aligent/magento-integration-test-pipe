@@ -28,6 +28,18 @@ run_integration_tests () {
   sed -i "s/'db-password' => '123123q'/'db-password' => 'password'/" etc/install-config-mysql.php.dist
   sed -i "s/'elasticsearch-host' => 'localhost'/'elasticsearch-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
   sed -i "s/'amqp-host' => 'localhost'/'amqp-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
+
+  if grep -q "product-enterprise-edition" ../../../composer.json; then
+    echo "Found enterprise edition"
+
+    # Add extra configuration not available in enterprise edition
+    sed -i "/^];/i 'consumers-wait-for-messages' => '0'," etc/install-config-mysql.php.dist
+    sed -i "/^];/i 'search-engine' => 'elasticsearch7'," etc/install-config-mysql.php.dist
+    sed -i "/^];/i 'elasticsearch-host' => 'host.docker.internal'," etc/install-config-mysql.php.dist
+    sed -i "/^];/i 'elasticsearch-port' => 9200," etc/install-config-mysql.php.dist
+    cat etc/install-config-mysql.php.dist
+  fi
+
   php ../../../vendor/bin/phpunit ../../../vendor/magento/magento2-base/dev/tests/integration/testsuite/Magento/Framework/MessageQueue/TopologyTest.php
 }
 
@@ -58,7 +70,7 @@ run_rest_api_tests () {
   sed -i "s/'db-host'                      => 'localhost'/'db-host' => 'host.docker.internal'/" config/install-config-mysql.php
   sed -i "s/'db-user'                      => 'root'/'db-user' => 'user'/" config/install-config-mysql.php
   sed -i "s/'db-password'                  => ''/'db-password' => 'password'/" config/install-config-mysql.php
-  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => 'host.docker.internal'/" config/install-config-mysql.php
+  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => 'host.docker.internal'/" config/install-config-mysql.php  
   cd ../../../
   php -S 127.0.0.1:8082 -t ./pub/ ./phpserver/router.php &
   sleep 5
