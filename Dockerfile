@@ -1,6 +1,6 @@
 FROM php:8.1-alpine
 
-RUN apk add mariadb-client procps --no-cache
+RUN apk add mariadb-client procps git --no-cache
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 

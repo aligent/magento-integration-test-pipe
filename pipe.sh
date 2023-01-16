@@ -15,6 +15,7 @@ run_integration_tests () {
     cd magento2
   fi
 
+  echo $COMPOSER_AUTH > ~/.composer/auth.json
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -38,6 +39,7 @@ run_rest_api_tests () {
 
   mysql -h host.docker.internal -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
 
+  echo $COMPOSER_AUTH > ~/.composer/auth.json
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -72,6 +74,7 @@ run_graphql_tests () {
 
   mysql -h host.docker.internal -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_graphql_tests;GRANT ALL ON magento_graphql_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
 
+  echo $COMPOSER_AUTH > ~/.composer/auth.json
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
