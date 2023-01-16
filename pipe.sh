@@ -22,6 +22,7 @@ run_integration_tests () {
   cat composer.json
   composer install
   cd dev/tests/integration
+  cat etc/install-config-mysql.php.dist
   sed -i "s/'db-host' => 'localhost'/'db-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
   sed -i "s/'db-user' => 'root'/'db-user' => 'user'/" etc/install-config-mysql.php.dist
   sed -i "s/'db-password' => '123123q'/'db-password' => 'password'/" etc/install-config-mysql.php.dist
@@ -46,7 +47,6 @@ run_rest_api_tests () {
   cat composer.json
   composer install
   cd dev/tests/api-functional
-
   cp phpunit_rest.xml.dist phpunit_rest.xml
   cp config/install-config-mysql.php.dist config/install-config-mysql.php
   sed -i 's/name="TESTS_MAGENTO_INSTALLATION" value="disabled"/name="TESTS_MAGENTO_INSTALLATION" value="enabled"/' phpunit_rest.xml
