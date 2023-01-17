@@ -7,15 +7,23 @@ TYPE=${TYPE:="integration"}
 # Database defaults
 DATABASE_USERNAME=${DATABASE_USERNAME:="user"}
 DATABASE_ROOTPASSWORD=${DATABASE_ROOTPASSWORD:="rootpassword"}
+DATABASE_PASSWORD=${DATABASE_PASSWORD:="password"}
+
+# Service defaults
+ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:="host.docker.internal"}
+RABBITMQ_HOST=${RABBITMQ_HOST:="host.docker.internal"}
+DATABASE_HOST=${DATABASE_HOST:="host.docker.internal"}
+
+REPOSITORY_URL=${REPOSITORY_URL:="https://mirror.mage-os.org/"}
+
 
 run_integration_tests () {
   if [ ! -f "composer.lock" ]; then
     echo "composer.lock does not exist."
-    composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    composer create-project --repository-url="$REPOSITORY_URL" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
     cd magento2
   fi
 
-  echo $COMPOSER_AUTH > ~/.composer/auth.json
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -23,17 +31,18 @@ run_integration_tests () {
   composer install
   cd dev/tests/integration
   cat etc/install-config-mysql.php.dist
-  sed -i "s/'db-host' => 'localhost'/'db-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
-  sed -i "s/'db-user' => 'root'/'db-user' => 'user'/" etc/install-config-mysql.php.dist
-  sed -i "s/'db-password' => '123123q'/'db-password' => 'password'/" etc/install-config-mysql.php.dist
-  sed -i "s/'elasticsearch-host' => 'localhost'/'elasticsearch-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
-  sed -i "s/'amqp-host' => 'localhost'/'amqp-host' => 'host.docker.internal'/" etc/install-config-mysql.php.dist
+  sed -i "s/'db-host' => 'localhost'/'db-host' => '$DATABASE_HOST'/" etc/install-config-mysql.php.dist
+  sed -i "s/'db-user' => 'root'/'db-user' => '$DATABASE_USERNAME'/" etc/install-config-mysql.php.dist
+  sed -i "s/'db-password' => '123123q'/'db-password' => '$DATABASE_PASSWORD'/" etc/install-config-mysql.php.dist
+  sed -i "s/'elasticsearch-host' => 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" etc/install-config-mysql.php.dist
+  sed -i "s/'amqp-host' => 'localhost'/'amqp-host' => '$RABBITMQ_HOST'/" etc/install-config-mysql.php.dist
 
   # Add extra configuration not available in enterprise edition
   sed -i "/^];/i 'consumers-wait-for-messages' => '0'," etc/install-config-mysql.php.dist
   sed -i "/^];/i 'search-engine' => 'elasticsearch7'," etc/install-config-mysql.php.dist
-  sed -i "/^];/i 'elasticsearch-host' => 'host.docker.internal'," etc/install-config-mysql.php.dist
+  sed -i "/^];/i 'elasticsearch-host' => '$ELASTICSEARCH_HOST'," etc/install-config-mysql.php.dist
   sed -i "/^];/i 'elasticsearch-port' => 9200," etc/install-config-mysql.php.dist
+  sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_integration'," etc/install-config-mysql.php.dist
   cat etc/install-config-mysql.php.dist
 
   php ../../../vendor/bin/phpunit ../../../vendor/magento/magento2-base/dev/tests/integration/testsuite/Magento/Framework/MessageQueue/TopologyTest.php
@@ -42,13 +51,12 @@ run_integration_tests () {
 run_rest_api_tests () {
   if [ ! -f "composer.lock" ]; then
     echo "composer.lock does not exist."
-    composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    composer create-project --repository-url="$REPOSITORY_URL" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
     cd magento2
   fi
 
-  mysql -h host.docker.internal -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
+  mysql -h $DATABASE_HOST -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
 
-  echo $COMPOSER_AUTH > ~/.composer/auth.json
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -63,10 +71,15 @@ run_rest_api_tests () {
   sed -i 's/value="123123q"/value="Test Webservice API key"/' phpunit_rest.xml
 
   sed -i "s,http://localhost/,http://127.0.0.1:8082/index.php/," config/install-config-mysql.php
-  sed -i "s/'db-host'                      => 'localhost'/'db-host' => 'host.docker.internal'/" config/install-config-mysql.php
-  sed -i "s/'db-user'                      => 'root'/'db-user' => 'user'/" config/install-config-mysql.php
-  sed -i "s/'db-password'                  => ''/'db-password' => 'password'/" config/install-config-mysql.php
-  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => 'host.docker.internal'/" config/install-config-mysql.php  
+  sed -i "s/'db-host'                      => 'localhost'/'db-host' => '$DATABASE_HOST'/" config/install-config-mysql.php
+  sed -i "s/'db-user'                      => 'root'/'db-user' => '$DATABASE_USERNAME'/" config/install-config-mysql.php
+  sed -i "s/'db-password'                  => ''/'db-password' => '$DATABASE_PASSWORD'/" config/install-config-mysql.php
+  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql.php
+  sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_rest'," config/install-config-mysql.php
+
+  # Namespace Elasticsearch indexes
+  sed -i "/^];/i''catalog/search/elasticsearch7_index_prefix' => 'magento2_rest'," config/config-global.php.dist
+
   cd ../../../
   php -S 127.0.0.1:8082 -t ./pub/ ./phpserver/router.php &
   sleep 5
@@ -76,13 +89,12 @@ run_rest_api_tests () {
 run_graphql_tests () {
   if [ ! -f "composer.lock" ]; then
     echo "composer.lock does not exist."
-    composer create-project --repository-url="https://mirror.mage-os.org/" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    composer create-project --repository-url="$REPOSITORY_URL" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
     cd magento2
   fi
 
-  mysql -h host.docker.internal -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_graphql_tests;GRANT ALL ON magento_graphql_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
+  mysql -h $DATABASE_HOST -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_graphql_tests;GRANT ALL ON magento_graphql_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
 
-  echo $COMPOSER_AUTH > ~/.composer/auth.json
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
@@ -99,16 +111,28 @@ run_graphql_tests () {
   sed -i 's,value="config/install-config-mysql.php",value="config/install-config-mysql-graphql.php",' phpunit_graphql.xml
 
   sed -i "s,http://localhost/,http://127.0.0.1:8082/index.php/," config/install-config-mysql-graphql.php
-  sed -i "s/'db-host'                      => 'localhost'/'db-host' => 'host.docker.internal'/" config/install-config-mysql-graphql.php
+  sed -i "s/'db-host'                      => 'localhost'/'db-host' => '$DATABASE_HOST'/" config/install-config-mysql-graphql.php
   sed -i "s/'db-name'                      => 'magento_functional_tests'/'db-name' => 'magento_graphql_tests'/" config/install-config-mysql-graphql.php
-  sed -i "s/'db-user'                      => 'root'/'db-user' => 'user'/" config/install-config-mysql-graphql.php
-  sed -i "s/'db-password'                  => ''/'db-password' => 'password'/" config/install-config-mysql-graphql.php
-  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => 'host.docker.internal'/" config/install-config-mysql-graphql.php
+  sed -i "s/'db-user'                      => 'root'/'db-user' => '$DATABASE_USERNAME'/" config/install-config-mysql-graphql.php
+  sed -i "s/'db-password'                  => ''/'db-password' => '$DATABASE_PASSWORD'/" config/install-config-mysql-graphql.php
+  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql-graphql.php
+  sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_graphql'," config/install-config-mysql-graphql.php
+
+  # Namespace Elasticsearch indexes
+  sed -i "/^];/i''catalog/search/elasticsearch7_index_prefix' => 'magento2_graphql'," config/config-global.php.dist
+
   cd ../../../
   php -S 127.0.0.1:8082 -t ./pub/ ./phpserver/router.php &
   sleep 5
   vendor/bin/phpunit -c $(pwd)/dev/tests/api-functional/phpunit_graphql.xml vendor/magento/magento2-base/dev/tests/api-functional/testsuite/Magento/GraphQl/Directory/CurrencyTest.php
 }
+
+if [[ ! -z "${COMPOSER_AUTH}" ]]; then
+  echo "Configuring composer credentials"
+  echo $COMPOSER_AUTH > ~/.composer/auth.json
+else
+  echo "No composer credentials found. Skipping configuration"
+fi
 
 case $TYPE in
 

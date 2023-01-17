@@ -20,3 +20,6 @@ services:
         build: .
         entrypoint: /bin/ash
         tty: true
+        volumes:
+            - "~/.composer/cache:/root/.composer/cache"
+        env_file: .env
