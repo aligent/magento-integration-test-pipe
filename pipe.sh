@@ -14,13 +14,25 @@ ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST:="host.docker.internal"}
 RABBITMQ_HOST=${RABBITMQ_HOST:="host.docker.internal"}
 DATABASE_HOST=${DATABASE_HOST:="host.docker.internal"}
 
-REPOSITORY_URL=${REPOSITORY_URL:="https://mirror.mage-os.org/"}
+REPOSITORY_URL=${REPOSITORY_URL:="https://repo.magento.com/"}
+MAGENTO_VERSION=${MAGENTO_VERSION:="magento/project-community-edition:>=2.4.5 <2.4.6"}
 
+GROUP=${GROUP:=""}
+TESTS_PATH=${TESTS_PATH:=""}
+
+create_database_schema () {
+  mysql -h $DATABASE_HOST -uroot -p$DATABASE_ROOTPASSWORD << SQL
+  CREATE DATABASE IF NOT EXISTS $1;
+  CREATE USER IF NOT EXISTS '$DATABASE_USERNAME'@'%' IDENTIFIED BY '$DATABASE_PASSWORD';
+  GRANT ALL ON $1.* TO '$DATABASE_USERNAME'@'%';
+  FLUSH PRIVILEGES;
+SQL
+}
 
 run_integration_tests () {
   if [ ! -f "composer.lock" ]; then
     echo "composer.lock does not exist."
-    composer create-project --repository-url="$REPOSITORY_URL" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
     cd magento2
   fi
 
@@ -45,17 +57,17 @@ run_integration_tests () {
   sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_integration'," etc/install-config-mysql.php.dist
   cat etc/install-config-mysql.php.dist
 
-  php ../../../vendor/bin/phpunit ../../../vendor/magento/magento2-base/dev/tests/integration/testsuite/Magento/Framework/MessageQueue/TopologyTest.php
+  php ../../../vendor/bin/phpunit $GROUP $TESTS_PATH
 }
 
 run_rest_api_tests () {
   if [ ! -f "composer.lock" ]; then
     echo "composer.lock does not exist."
-    composer create-project --repository-url="$REPOSITORY_URL" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
     cd magento2
   fi
 
-  mysql -h $DATABASE_HOST -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_functional_tests;GRANT ALL ON magento_functional_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
+  create_database_schema magento_functional_tests
 
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
@@ -77,23 +89,20 @@ run_rest_api_tests () {
   sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql.php
   sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_rest'," config/install-config-mysql.php
 
-  # Namespace Elasticsearch indexes
-  sed -i "/^];/i''catalog/search/elasticsearch7_index_prefix' => 'magento2_rest'," config/config-global.php.dist
-
   cd ../../../
   php -S 127.0.0.1:8082 -t ./pub/ ./phpserver/router.php &
   sleep 5
-  vendor/bin/phpunit -c $(pwd)/dev/tests/api-functional/phpunit_rest.xml vendor/magento/magento2-base/dev/tests/api-functional/testsuite/Magento/Directory/Api/CurrencyInformationAcquirerTest.php
+  vendor/bin/phpunit -c $(pwd)/dev/tests/api-functional/phpunit_rest.xml $GROUP $TESTS_PATH
 }
 
 run_graphql_tests () {
   if [ ! -f "composer.lock" ]; then
     echo "composer.lock does not exist."
-    composer create-project --repository-url="$REPOSITORY_URL" "magento/project-community-edition:>=2.4.5 <2.4.6" ./magento2 --no-install
+    composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
     cd magento2
   fi
 
-  mysql -h $DATABASE_HOST -uroot -p$DATABASE_ROOTPASSWORD -e "CREATE DATABASE IF NOT EXISTS magento_graphql_tests;GRANT ALL ON magento_graphql_tests.* TO '$DATABASE_USERNAME'@'%';FLUSH PRIVILEGES;SHOW DATABASES"
+  create_database_schema magento_graphql_tests
 
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
@@ -105,12 +114,12 @@ run_graphql_tests () {
   cp phpunit_graphql.xml.dist phpunit_graphql.xml
   cp config/install-config-mysql.php.dist config/install-config-mysql-graphql.php
   sed -i 's/name="TESTS_MAGENTO_INSTALLATION" value="disabled"/name="TESTS_MAGENTO_INSTALLATION" value="enabled"/' phpunit_graphql.xml
-  sed -i 's#http://magento.url#http://127.0.0.1:8082/index.php/#' phpunit_graphql.xml
+  sed -i 's#http://magento.url#http://127.0.0.1:8083/index.php/#' phpunit_graphql.xml
   sed -i 's/value="admin"/value="Test Webservice User"/' phpunit_graphql.xml
   sed -i 's/value="123123q"/value="Test Webservice API key"/' phpunit_graphql.xml
   sed -i 's,value="config/install-config-mysql.php",value="config/install-config-mysql-graphql.php",' phpunit_graphql.xml
 
-  sed -i "s,http://localhost/,http://127.0.0.1:8082/index.php/," config/install-config-mysql-graphql.php
+  sed -i "s,http://localhost/,http://127.0.0.1:8083/index.php/," config/install-config-mysql-graphql.php
   sed -i "s/'db-host'                      => 'localhost'/'db-host' => '$DATABASE_HOST'/" config/install-config-mysql-graphql.php
   sed -i "s/'db-name'                      => 'magento_functional_tests'/'db-name' => 'magento_graphql_tests'/" config/install-config-mysql-graphql.php
   sed -i "s/'db-user'                      => 'root'/'db-user' => '$DATABASE_USERNAME'/" config/install-config-mysql-graphql.php
@@ -118,20 +127,17 @@ run_graphql_tests () {
   sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql-graphql.php
   sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_graphql'," config/install-config-mysql-graphql.php
 
-  # Namespace Elasticsearch indexes
-  sed -i "/^];/i''catalog/search/elasticsearch7_index_prefix' => 'magento2_graphql'," config/config-global.php.dist
-
   cd ../../../
-  php -S 127.0.0.1:8082 -t ./pub/ ./phpserver/router.php &
+  php -S 127.0.0.1:8083 -t ./pub/ ./phpserver/router.php &
   sleep 5
-  vendor/bin/phpunit -c $(pwd)/dev/tests/api-functional/phpunit_graphql.xml vendor/magento/magento2-base/dev/tests/api-functional/testsuite/Magento/GraphQl/Directory/CurrencyTest.php
+  vendor/bin/phpunit -c $(pwd)/dev/tests/api-functional/phpunit_graphql.xml $GROUP $TESTS_PATH
 }
 
 if [[ ! -z "${COMPOSER_AUTH}" ]]; then
   echo "Configuring composer credentials"
   echo $COMPOSER_AUTH > ~/.composer/auth.json
 else
-  echo "No composer credentials found. Skipping configuration"
+  echo "No composer credentials found. \n \n"
 fi
 
 case $TYPE in
