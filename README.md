@@ -7,6 +7,10 @@ It is designed to be run parallelly so you can leverage bitbucket parallel steps
 The pipe detects a `composer.lock` file and installs packages. If no `composer.lock` file is found, the pipe will create
 a new magento project.
 
+## Architecture
+![image](https://user-images.githubusercontent.com/40108018/213162548-349aeb6a-fb87-4146-b903-ec30afcb32f5.png)
+
+
 ## Environment Variables
 
 | Variable              | Usage                                                                                                                                                      |
