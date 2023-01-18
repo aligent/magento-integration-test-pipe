@@ -20,8 +20,8 @@ a new magento project.
 | `DATABASE_HOST`         | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                   |
 | `COMPOSER_AUTH`         | JSON stringified composer `auth.json` with the relevant configuration you need.                                                                            |
 | `REPOSITORY_URL`        | `https://repo.magento.com/` - If using this, make sure the `COMPOSER_AUTH` variable is set. <br>  `https://mirror.mage-os.org/` - Only supports open source edition. <br> Default: `https://repo.magento.com/` |
-| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.5 <2.4.6`                                                                                     |
-| `GROUP`                 | (Optional) Specify a test group to run. Example: `--group inventory indexer_dimension`                                                                     |
+| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.5 <2.4.6` <br> Commerce: `magento/project-enterprise-edition:>=2.4.5 <2.4.6`                                                                                  |
+| `GROUP`                 | (Optional) Specify test group(s) to run. Example: `--group inventory,indexer_dimension` <br> See phpunit [@group annotation](https://phpunit.readthedocs.io/en/9.5/annotations.html#group)                                                                    |
 | `TESTS_PATH`            | (Optional) Specify a test path to run. Example `./app/code/The/Module`                                                                                     |
 
 ## Example Pipeline
@@ -63,6 +63,7 @@ definitions:
               TYPE: integration
               TESTS_PATH: ../../../vendor/magento/magento2-base/dev/tests/integration/testsuite/Magento/Framework/MessageQueue/TopologyTest.php
               REPOSITORY_URL: https://mirror.mage-os.org/
+              GROUP: customgroup
         services: 
           - mariadb
           - elasticsearch
