@@ -63,7 +63,7 @@ definitions:
               TYPE: integration
               TESTS_PATH: ../../../vendor/magento/magento2-base/dev/tests/integration/testsuite/Magento/Framework/MessageQueue/TopologyTest.php
               REPOSITORY_URL: https://mirror.mage-os.org/
-              GROUP: customgroup
+              GROUP: --group group_a,group_b
         services: 
           - mariadb
           - elasticsearch
