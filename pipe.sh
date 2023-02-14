@@ -29,18 +29,25 @@ create_database_schema () {
 SQL
 }
 
-run_integration_tests () {
+composer_setup () {
   if [ ! -f "composer.lock" ]; then
-    echo "composer.lock does not exist."
-    composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
-    cd magento2
+      echo "composer.lock does not exist."
+      composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
+      cd magento2
+      composer config repositories.local path $BITBUCKET_CLONE_DIR
+      composer require $COMPOSER_PACKAGES "@dev" --no-update
   fi
 
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
+}
+
+run_integration_tests () {
+  composer_setup
   cat composer.json
   composer install
+
   cd dev/tests/integration
   cat etc/install-config-mysql.php.dist
   sed -i "s/'db-host' => 'localhost'/'db-host' => '$DATABASE_HOST'/" etc/install-config-mysql.php.dist
@@ -61,17 +68,9 @@ run_integration_tests () {
 }
 
 run_rest_api_tests () {
-  if [ ! -f "composer.lock" ]; then
-    echo "composer.lock does not exist."
-    composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
-    cd magento2
-  fi
-
   create_database_schema magento_functional_tests
 
-  composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-  composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
-  composer config --no-interaction allow-plugins.magento/* true
+  composer_setup
   cat composer.json
   composer install
   cd dev/tests/api-functional
@@ -96,19 +95,9 @@ run_rest_api_tests () {
 }
 
 run_graphql_tests () {
-  if [ ! -f "composer.lock" ]; then
-    echo "composer.lock does not exist."
-    composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
-    cd magento2
-  fi
-
   create_database_schema magento_graphql_tests
 
-  composer config repositories.local path $BITBUCKET_CLONE_DIR
-  composer require $COMPOSER_PACKAGES "@dev" --no-update
-  composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
-  composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
-  composer config --no-interaction allow-plugins.magento/* true
+  composer_setup
   cat composer.json
   composer install
   cd dev/tests/api-functional
