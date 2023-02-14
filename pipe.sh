@@ -33,9 +33,9 @@ composer_setup () {
   if [ ! -f "composer.lock" ]; then
       echo "composer.lock does not exist."
       composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" ./magento2 --no-install
+      cd magento2
       composer config repositories.local path $BITBUCKET_CLONE_DIR
       composer require $COMPOSER_PACKAGES "@dev" --no-update
-      cd magento2
   fi
 
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
