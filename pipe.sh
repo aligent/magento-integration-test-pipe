@@ -104,6 +104,8 @@ run_graphql_tests () {
 
   create_database_schema magento_graphql_tests
 
+  composer config repositories.local path $BITBUCKET_CLONE_DIR
+  composer require $COMPOSER_PACKAGES "@dev" --no-update
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
