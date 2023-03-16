@@ -22,4 +22,5 @@ services:
         tty: true
         volumes:
             - "~/.composer/cache:/root/.composer/cache"
+            - "~/.composer/auth.json:/root/.composer/auth.json"
         env_file: .env

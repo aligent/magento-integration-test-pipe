@@ -15,7 +15,7 @@ RABBITMQ_HOST=${RABBITMQ_HOST:="host.docker.internal"}
 DATABASE_HOST=${DATABASE_HOST:="host.docker.internal"}
 
 REPOSITORY_URL=${REPOSITORY_URL:="https://repo.magento.com/"}
-MAGENTO_VERSION=${MAGENTO_VERSION:="magento/project-community-edition:>=2.4.5 <2.4.6"}
+MAGENTO_VERSION=${MAGENTO_VERSION:="magento/project-community-edition:>=2.4.6 <2.4.7"}
 
 GROUP=${GROUP:=""}
 TESTS_PATH=${TESTS_PATH:=""}
