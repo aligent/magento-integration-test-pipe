@@ -120,7 +120,7 @@ run_graphql_tests () {
   sed -i "s/'db-password'                  => ''/'db-password' => '$DATABASE_PASSWORD'/" config/install-config-mysql-graphql.php
   sed -i "s/'opensearch-host'           => 'localhost'/'opensearch-host' => '$OPENSEARCH_HOST'/" config/install-config-mysql-graphql.php
   sed -i "/^];/i 'opensearch-index-prefix' => 'magento_graphql'," config/install-config-mysql-graphql.php
-  cat config/install-config-mysql.php
+  cat config/install-config-mysql-graphql.php
 
   cd ../../../
   php -S 127.0.0.1:8083 -t ./pub/ ./phpserver/router.php &
