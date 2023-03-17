@@ -15,7 +15,7 @@ RABBITMQ_HOST=${RABBITMQ_HOST:="host.docker.internal"}
 DATABASE_HOST=${DATABASE_HOST:="host.docker.internal"}
 
 REPOSITORY_URL=${REPOSITORY_URL:="https://repo.magento.com/"}
-MAGENTO_VERSION=${MAGENTO_VERSION:="magento/project-community-edition:>=2.4.5 <2.4.6"}
+MAGENTO_VERSION=${MAGENTO_VERSION:="magento/project-community-edition:>=2.4.6 <2.4.7"}
 
 GROUP=${GROUP:=""}
 TESTS_PATH=${TESTS_PATH:=""}
@@ -34,8 +34,11 @@ composer_setup () {
       echo "composer.lock does not exist."
       composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" /magento2 --no-install
       cd /magento2
+
+    if [[ ! -z "${COMPOSER_PACKAGES}" ]]; then
       composer config repositories.local path $BITBUCKET_CLONE_DIR
       composer require $COMPOSER_PACKAGES "@dev" --no-update
+    fi
   fi
 
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
@@ -50,6 +53,12 @@ run_integration_tests () {
 
   cd dev/tests/integration
   cat etc/install-config-mysql.php.dist
+
+  # Replace Opensearch with Elasticsearch
+  sed -i "s/'search-engine'\s*=>\s*'opensearch'/'search-engine' => 'elasticsearch7'/" etc/install-config-mysql.php.dist
+  sed -i "s/'opensearch-host'/'elasticsearch-host'/" etc/install-config-mysql.php.dist
+  sed -i "s/'opensearch-port'/'elasticsearch-port'/" etc/install-config-mysql.php.dist
+
   sed -i "s/'db-host' => 'localhost'/'db-host' => '$DATABASE_HOST'/" etc/install-config-mysql.php.dist
   sed -i "s/'db-user' => 'root'/'db-user' => '$DATABASE_USERNAME'/" etc/install-config-mysql.php.dist
   sed -i "s/'db-password' => '123123q'/'db-password' => '$DATABASE_PASSWORD'/" etc/install-config-mysql.php.dist
@@ -76,17 +85,26 @@ run_rest_api_tests () {
   cd dev/tests/api-functional
   cp phpunit_rest.xml.dist phpunit_rest.xml
   cp config/install-config-mysql.php.dist config/install-config-mysql.php
+
   sed -i 's/name="TESTS_MAGENTO_INSTALLATION" value="disabled"/name="TESTS_MAGENTO_INSTALLATION" value="enabled"/' phpunit_rest.xml
   sed -i 's#http://magento.url#http://127.0.0.1:8082/index.php/#' phpunit_rest.xml
   sed -i 's/value="admin"/value="Test Webservice User"/' phpunit_rest.xml
   sed -i 's/value="123123q"/value="Test Webservice API key"/' phpunit_rest.xml
 
+  cat config/install-config-mysql.php.dist
+
+  # Replace Opensearch with Elasticsearch
+  sed -i "s/'search-engine'\s*=>\s*'opensearch'/'search-engine' => 'elasticsearch7'/" config/install-config-mysql.php
+  sed -i "s/'opensearch-host'/'elasticsearch-host'/" config/install-config-mysql.php
+  sed -i "s/'opensearch-port'/'elasticsearch-port'/" config/install-config-mysql.php
+
   sed -i "s,http://localhost/,http://127.0.0.1:8082/index.php/," config/install-config-mysql.php
-  sed -i "s/'db-host'                      => 'localhost'/'db-host' => '$DATABASE_HOST'/" config/install-config-mysql.php
-  sed -i "s/'db-user'                      => 'root'/'db-user' => '$DATABASE_USERNAME'/" config/install-config-mysql.php
-  sed -i "s/'db-password'                  => ''/'db-password' => '$DATABASE_PASSWORD'/" config/install-config-mysql.php
-  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql.php
+  sed -i "s/'db-host'\s*=> 'localhost'/'db-host' => '$DATABASE_HOST'/" config/install-config-mysql.php
+  sed -i "s/'db-user'\s*=> 'root'/'db-user' => '$DATABASE_USERNAME'/" config/install-config-mysql.php
+  sed -i "s/'db-password'\s*=> ''/'db-password' => '$DATABASE_PASSWORD'/" config/install-config-mysql.php
+  sed -i "s/'elasticsearch-host'\s*=>\s*'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql.php
   sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_rest'," config/install-config-mysql.php
+  cat config/install-config-mysql.php
 
   cd ../../../
   php -S 127.0.0.1:8082 -t ./pub/ ./phpserver/router.php &
@@ -104,19 +122,28 @@ run_graphql_tests () {
 
   cp phpunit_graphql.xml.dist phpunit_graphql.xml
   cp config/install-config-mysql.php.dist config/install-config-mysql-graphql.php
+
   sed -i 's/name="TESTS_MAGENTO_INSTALLATION" value="disabled"/name="TESTS_MAGENTO_INSTALLATION" value="enabled"/' phpunit_graphql.xml
   sed -i 's#http://magento.url#http://127.0.0.1:8083/index.php/#' phpunit_graphql.xml
   sed -i 's/value="admin"/value="Test Webservice User"/' phpunit_graphql.xml
   sed -i 's/value="123123q"/value="Test Webservice API key"/' phpunit_graphql.xml
   sed -i 's,value="config/install-config-mysql.php",value="config/install-config-mysql-graphql.php",' phpunit_graphql.xml
 
+  cat config/install-config-mysql.php.dist
+
+  # Replace Opensearch with Elasticsearch
+  sed -i "s/'search-engine'\s*=>\s*'opensearch'/'search-engine' => 'elasticsearch7'/" config/install-config-mysql-graphql.php
+  sed -i "s/'opensearch-host'/'elasticsearch-host'/" config/install-config-mysql-graphql.php
+  sed -i "s/'opensearch-port'/'elasticsearch-port'/" config/install-config-mysql-graphql.php
+
   sed -i "s,http://localhost/,http://127.0.0.1:8083/index.php/," config/install-config-mysql-graphql.php
-  sed -i "s/'db-host'                      => 'localhost'/'db-host' => '$DATABASE_HOST'/" config/install-config-mysql-graphql.php
-  sed -i "s/'db-name'                      => 'magento_functional_tests'/'db-name' => 'magento_graphql_tests'/" config/install-config-mysql-graphql.php
-  sed -i "s/'db-user'                      => 'root'/'db-user' => '$DATABASE_USERNAME'/" config/install-config-mysql-graphql.php
-  sed -i "s/'db-password'                  => ''/'db-password' => '$DATABASE_PASSWORD'/" config/install-config-mysql-graphql.php
-  sed -i "s/'elasticsearch-host'           => 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql-graphql.php
+  sed -i "s/'db-host'\s*=> 'localhost'/'db-host' => '$DATABASE_HOST'/" config/install-config-mysql-graphql.php
+  sed -i "s/'db-name'\s*=> 'magento_functional_tests'/'db-name' => 'magento_graphql_tests'/" config/install-config-mysql-graphql.php
+  sed -i "s/'db-user'\s*=> 'root'/'db-user' => '$DATABASE_USERNAME'/" config/install-config-mysql-graphql.php
+  sed -i "s/'db-password'\s*=> ''/'db-password' => '$DATABASE_PASSWORD'/" config/install-config-mysql-graphql.php
+  sed -i "s/'elasticsearch-host'\s*=> 'localhost'/'elasticsearch-host' => '$ELASTICSEARCH_HOST'/" config/install-config-mysql-graphql.php
   sed -i "/^];/i 'elasticsearch-index-prefix' => 'magento_graphql'," config/install-config-mysql-graphql.php
+  cat config/install-config-mysql-graphql.php
 
   cd ../../../
   php -S 127.0.0.1:8083 -t ./pub/ ./phpserver/router.php &
