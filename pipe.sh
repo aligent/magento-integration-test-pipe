@@ -36,7 +36,12 @@ composer_setup () {
       cd /magento2
 
     if [[ ! -z "${COMPOSER_PACKAGES}" ]]; then
-      composer config repositories.local path $BITBUCKET_CLONE_DIR
+      # Merge the repository object from module's composer.json into magento's composer.json
+      jq --slurpfile app $BITBUCKET_CLONE_DIR/composer.json '.repositories += [$app[0].repositories[]]' composer.json \
+      > merged.composer.json
+
+      jq --arg path $BITBUCKET_CLONE_DIR '.repositories += [{ type: "path", "url": $path}]' merged.composer.json > composer.json
+
       composer require $COMPOSER_PACKAGES "@dev" --no-update
     fi
   fi

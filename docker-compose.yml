@@ -18,7 +18,7 @@ services:
             RABBITMQ_DEFAULT_PASS: guest
     magento:
         build: .
-        entrypoint: /bin/ash
+        entrypoint: /bin/sh
         tty: true
         volumes:
             - "~/.composer/cache:/root/.composer/cache"
