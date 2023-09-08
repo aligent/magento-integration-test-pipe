@@ -5,14 +5,14 @@ services:
             ES_SETTING_DISCOVERY_TYPE: single-node
             ES_JAVA_OPTS: '-Xms512m -Xmx512m'
     mariadb:
-        image: mariadb:10.4
+        image: mariadb:10.6
         environment:
             MYSQL_DATABASE: magento_integration_tests
             MYSQL_USER: user
             MYSQL_PASSWORD: password
             MYSQL_ROOT_PASSWORD: rootpassword
     rabbitmq:
-        image: rabbitmq:3.9-management
+        image: rabbitmq:3.11-management
         environment:
             RABBITMQ_DEFAULT_USER: guest
             RABBITMQ_DEFAULT_PASS: guest

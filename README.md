@@ -24,13 +24,13 @@ a new magento project.
 | `DATABASE_HOST`         | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                   |
 | `COMPOSER_AUTH`         | JSON stringified composer `auth.json` with the relevant configuration you need.                                                                            |
 | `REPOSITORY_URL`        | `https://repo.magento.com/` - If using this, make sure the `COMPOSER_AUTH` variable is set. <br>  `https://mirror.mage-os.org/` - Only supports open source edition. <br> Default: `https://repo.magento.com/` |
-| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.5 <2.4.6` <br> Commerce: `magento/project-enterprise-edition:>=2.4.5 <2.4.6`                                                                                  |
+| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.6 <2.4.7` <br> Commerce: `magento/project-enterprise-edition:>=2.4.6 <2.4.7`                                                                                  |
 | `GROUP`                 | (Optional) Specify test group(s) to run. Example: `--group inventory,indexer_dimension` <br> See phpunit [@group annotation](https://phpunit.readthedocs.io/en/9.5/annotations.html#group)                                                                    |
 | `TESTS_PATH`            | (Optional) Specify a test path to run. Example `./app/code/The/Module`                                                                                     |
 
 ## Example Pipeline
 ```yml
-image: php:8.1
+image: php:8.2
 
 definitions:
   services:
@@ -41,7 +41,7 @@ definitions:
         ES_JAVA_OPTS: '-Xms512m -Xmx512m'
 
     mariadb:
-      image: mariadb:10.4
+      image: mariadb:10.6
       memory: 256
       variables:
         MYSQL_DATABASE: magento_integration_tests
@@ -50,7 +50,7 @@ definitions:
         MYSQL_ROOT_PASSWORD: rootpassword
 
     rabbitmq:
-      image: rabbitmq:3.9-management
+      image: rabbitmq:3.11-management
       memory: 256
       env:
         RABBITMQ_DEFAULT_USER: guest
