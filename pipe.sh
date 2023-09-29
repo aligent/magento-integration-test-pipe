@@ -37,12 +37,15 @@ composer_setup () {
 
     if [[ ! -z "${COMPOSER_PACKAGES}" ]]; then
       # Merge the repository object from module's composer.json into magento's composer.json
-      jq --slurpfile app $BITBUCKET_CLONE_DIR/composer.json '.repositories += [$app[0].repositories[]?]' composer.json \
-      > merged.composer.json
+      jq --arg package $COMPOSER_PACKAGES --arg path $BITBUCKET_CLONE_DIR \
+      '.repositories += [{ "type": "path", "url": $path, "options": { "versions": { ($package): "99-dev" }}}]' \
+      composer.json > merged.composer.json
 
-      jq --arg path $BITBUCKET_CLONE_DIR '.repositories += [{ type: "path", "url": $path}]' merged.composer.json > composer.json
+      jq --slurpfile app $BITBUCKET_CLONE_DIR/composer.json '.repositories += [$app[0].repositories[]?]' \
+      merged.composer.json > composer.json
 
-      composer require $COMPOSER_PACKAGES "@dev" --no-update
+
+      composer require $COMPOSER_PACKAGES "99-dev" --no-update
     fi
   fi
 
