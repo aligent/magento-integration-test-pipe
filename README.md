@@ -28,6 +28,14 @@ a new magento project.
 | `GROUP`                 | (Optional) Specify test group(s) to run. Example: `--group inventory,indexer_dimension` <br> See phpunit [@group annotation](https://phpunit.readthedocs.io/en/9.5/annotations.html#group)                                                                    |
 | `TESTS_PATH`            | (Optional) Specify a test path to run. Example `./app/code/The/Module`                                                                                     |
 
+## Using private packages
+When you are testing a standalone module that has dependencies which are private, you may want to include private
+registries or repositories so that the test pipeline can download the packages. The pipe provides support for this.
+
+Include the `repositories` field in your module's `composer.json`. When the pipe creates a new magento project, it will
+merge the module's `composer.json`'s `repositories`  field to the project's `composer.json`. You will also need
+to make sure that the `COMPOSER_AUTH` variable includes credentials for the private registries.
+
 ## Example Pipeline
 ```yml
 image: php:8.2
@@ -116,7 +124,8 @@ pipelines:
 
 ## Contributing
 
-Commits published to the `main` branch will trigger an automated build for the latest tag in DockerHub
+Commits to the `main` branch will trigger an automated build for the latest tag in DockerHub, commits to the `dev`
+branch will trigger an automated build with the `dev` tag in Docker hub.
 
 A docker compose based environment is available to help develop the pipe locally.
 
