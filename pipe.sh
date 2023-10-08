@@ -37,7 +37,7 @@ composer_setup () {
       composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" /magento2 --no-install
       cd /magento2
 
-    if [[ "$USE_VENDOR_CACHE" == "true" && -d "$VENDOR_CACHE_DIR/vendor"]]; then
+    if [[ "$USE_VENDOR_CACHE" == "true" && -d "$VENDOR_CACHE_DIR/vendor" ]]; then
       echo "Using vendor cache"
       cp -r $VENDOR_CACHE_DIR/vendor vendor
       cp $VENDOR_CACHE_DIR/composer.lock composer.lock
