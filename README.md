@@ -13,20 +13,21 @@ a new magento project.
 
 ## Environment Variables
 
-| Variable              | Usage                                                                                                                                                      |
-|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `TYPE`                  | Available tests are `integration`, `rest`, `graphql`. Default: `integration`                                                       |
-| `DATABASE_USERNAME`     | Default: `user`                                                                                                                                            |
-| `DATABASE_ROOTPASSWORD` | Default: `rootpassword`                                                                                                                                    |
-| `DATABASE_PASSWORD`     | Default: `password`                                                                                                                                        |
-| `ELASTICSEARCH_HOST`    | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                   |
-| `RABBITMQ_HOST`         | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                   |
-| `DATABASE_HOST`         | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                   |
-| `COMPOSER_AUTH`         | JSON stringified composer `auth.json` with the relevant configuration you need.                                                                            |
+| Variable                | Usage                                                                                                                                                                                                          |
+|-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `TYPE`                  | Available tests are `integration`, `rest`, `graphql`. Default: `integration`                                                                                                                                   |
+| `DATABASE_USERNAME`     | Default: `user`                                                                                                                                                                                                |
+| `DATABASE_ROOTPASSWORD` | Default: `rootpassword`                                                                                                                                                                                        |
+| `DATABASE_PASSWORD`     | Default: `password`                                                                                                                                                                                            |
+| `ELASTICSEARCH_HOST`    | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                                                                       |
+| `RABBITMQ_HOST`         | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                                                                       |
+| `DATABASE_HOST`         | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                                                                       |
+| `COMPOSER_AUTH`         | JSON stringified composer `auth.json` with the relevant configuration you need.                                                                                                                                |
 | `REPOSITORY_URL`        | `https://repo.magento.com/` - If using this, make sure the `COMPOSER_AUTH` variable is set. <br>  `https://mirror.mage-os.org/` - Only supports open source edition. <br> Default: `https://repo.magento.com/` |
-| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.6 <2.4.7` <br> Commerce: `magento/project-enterprise-edition:>=2.4.6 <2.4.7`                                                                                  |
-| `GROUP`                 | (Optional) Specify test group(s) to run. Example: `--group inventory,indexer_dimension` <br> See phpunit [@group annotation](https://phpunit.readthedocs.io/en/9.5/annotations.html#group)                                                                    |
-| `TESTS_PATH`            | (Optional) Specify a test path to run. Example `./app/code/The/Module`                                                                                     |
+| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.6 <2.4.7` <br> Commerce: `magento/project-enterprise-edition:>=2.4.6 <2.4.7`                                                                      |
+| `GROUP`                 | (Optional) Specify test group(s) to run. Example: `--group inventory,indexer_dimension` <br> See phpunit [@group annotation](https://phpunit.readthedocs.io/en/9.5/annotations.html#group)                     |
+| `TESTS_PATH`            | (Optional) Specify a test path to run. Example `./app/code/The/Module`                                                                                                                                         |
+| `COMPOSER_PACKAGES`     | (Optional) Specify any packages to require. Used when testing against a stand-alone module. Example `aligent/magento-async-events`                                                                             |
 
 ## Using private packages
 When you are testing a standalone module that has dependencies which are private, you may want to include private
@@ -129,23 +130,33 @@ branch will trigger an automated build with the `dev` tag in Docker hub.
 
 A docker compose based environment is available to help develop the pipe locally.
 
-To start the environment simply run and exec into the magento container
+## Local project testing
+
+The docker compose environment can be run to test a project locally, without requiring a pull request. Simply follow these steps:
+
+1. Checkout the project you would like to test to a working directory.
+2. Open a terminal and set a `PROJECT_DIR` environment variable pointing to the project's directory. For example:
 
 ```shell
-$ docker compose up -d
+$ PROJECT_DIR=~/projects/my-test-project
+```
+3. Create one or more `.env` files within your project to set environment variables that need to be overridden (e.g. `GROUP`)
+   *  Note that environment variables can be overridden by setting values in your shell directly. The use of `.env` files makes it easier to quickly change between types of tests, etc.
+4. Start the environment, providing overridden environment variables or your custom `.env` file:
+
+```shell
+$ docker compose --env_file path/to/env_file up -d
 $ docker compose exec magento sh
 ```
 
-Make sure that `/pipe.sh` is executable.
+6. Make sure that `/pipe.sh` is executable.
 
 ```shell
 /# chmod +x pipe.sh
 ```
 
-Invoke the pipe overriding any environment variable as necessary
+7. Invoke the pipe
 
 ```shell
 /# ./pipe.sh
-/# TYPE=rest    ./pipe.sh
-/# TYPE=graphql ./pipe.sh
 ```
