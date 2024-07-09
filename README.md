@@ -1,6 +1,6 @@
 # Aligent Magento Integration and API Functional Testing Pipe
 
-A bitbucket pipe for running Magento integration and api functional tests 
+A bitbucket pipe for running Magento integration and api functional tests
 
 It is designed to be run parallelly so you can leverage bitbucket parallel steps. [Example pipeline](#example-pipeline)
 
@@ -24,7 +24,7 @@ a new magento project.
 | `DATABASE_HOST`         | Must be `host.docker.internal` when running in pipelines. Optionally change this if you are developing the pipe locally.                                                                                       |
 | `COMPOSER_AUTH`         | JSON stringified composer `auth.json` with the relevant configuration you need.                                                                                                                                |
 | `REPOSITORY_URL`        | `https://repo.magento.com/` - If using this, make sure the `COMPOSER_AUTH` variable is set. <br>  `https://mirror.mage-os.org/` - Only supports open source edition. <br> Default: `https://repo.magento.com/` |
-| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.6 <2.4.7` <br> Commerce: `magento/project-enterprise-edition:>=2.4.6 <2.4.7`                                                                      |
+| `MAGENTO_VERSION`       | (Optional) Default: `magento/project-community-edition:>=2.4.7 <2.4.8` <br> Commerce: `magento/project-enterprise-edition:>=2.4.7 <2.4.8`                                                                      |
 | `GROUP`                 | (Optional) Specify test group(s) to run. Example: `--group inventory,indexer_dimension` <br> See phpunit [@group annotation](https://phpunit.readthedocs.io/en/9.5/annotations.html#group)                     |
 | `TESTS_PATH`            | (Optional) Specify a test path to run. Example `./app/code/The/Module`                                                                                                                                         |
 | `COMPOSER_PACKAGES`     | (Optional) Specify any packages to require. Used when testing against a stand-alone module. Example `aligent/magento-async-events`                                                                             |
@@ -39,7 +39,7 @@ to make sure that the `COMPOSER_AUTH` variable includes credentials for the priv
 
 ## Example Pipeline
 ```yml
-image: php:8.2
+image: php:8.3
 
 definitions:
   services:
@@ -59,7 +59,7 @@ definitions:
         MYSQL_ROOT_PASSWORD: rootpassword
 
     rabbitmq:
-      image: rabbitmq:3.11-management
+      image: rabbitmq:3.12-management
       memory: 256
       env:
         RABBITMQ_DEFAULT_USER: guest
@@ -77,7 +77,7 @@ definitions:
               TESTS_PATH: ../../../vendor/magento/magento2-base/dev/tests/integration/testsuite/Magento/Framework/MessageQueue/TopologyTest.php
               REPOSITORY_URL: https://mirror.mage-os.org/
               GROUP: --group group_a,group_b
-        services: 
+        services:
           - mariadb
           - elasticsearch
           - rabbitmq
@@ -93,7 +93,7 @@ definitions:
               TESTS_PATH: vendor/magento/magento2-base/dev/tests/api-functional/testsuite/Magento/Directory/Api/CurrencyInformationAcquirerTest.php
               REPOSITORY_URL: https://mirror.mage-os.org/
 
-        services: 
+        services:
           - mariadb
           - elasticsearch
           - rabbitmq
@@ -109,7 +109,7 @@ definitions:
               TESTS_PATH: vendor/magento/magento2-base/dev/tests/api-functional/testsuite/Magento/GraphQl/Directory/CurrencyTest.php
               REPOSITORY_URL: https://mirror.mage-os.org/
 
-        services: 
+        services:
           - mariadb
           - elasticsearch
           - rabbitmq
