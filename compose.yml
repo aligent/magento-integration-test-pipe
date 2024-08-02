@@ -23,4 +23,5 @@ services:
         volumes:
             - "~/.composer/cache:/root/.composer/cache"
             - "~/.composer/auth.json:/root/.composer/auth.json"
+            - "${PROJECT_DIR}:/root/app"
         env_file: .env
