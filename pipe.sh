@@ -15,7 +15,10 @@ RABBITMQ_HOST=${RABBITMQ_HOST:="host.docker.internal"}
 DATABASE_HOST=${DATABASE_HOST:="host.docker.internal"}
 
 REPOSITORY_URL=${REPOSITORY_URL:="https://repo.magento.com/"}
-MAGENTO_VERSION=${MAGENTO_VERSION:="magento/project-community-edition:>=2.4.6 <2.4.7"}
+MAGENTO_VERSION=${MAGENTO_VERSION:="magento/project-community-edition:>=2.4.7 <2.4.8"}
+USE_VENDOR_CACHE=${USE_VENDOR_CACHE:="false"}
+VENDOR_CACHE_DIR=${VENDOR_CACHE_DIR:="/vendor"}
+
 
 GROUP=${GROUP:=""}
 TESTS_PATH=${TESTS_PATH:=""}
@@ -30,36 +33,52 @@ SQL
 }
 
 composer_setup () {
-  if [ ! -f "composer.lock" ]; then
-      echo "composer.lock does not exist."
-      composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" /magento2 --no-install
-      cd /magento2
-
-    if [[ ! -z "${COMPOSER_PACKAGES}" ]]; then
-      # Merge the repository object from module's composer.json into magento's composer.json
-      jq --slurpfile app $BITBUCKET_CLONE_DIR/composer.json '.repositories += [$app[0].repositories[]?]' composer.json \
-      > merged.composer.json
-
-      jq --arg path $BITBUCKET_CLONE_DIR '.repositories += [{ type: "path", "url": $path}]' merged.composer.json > composer.json
-
-      composer require $COMPOSER_PACKAGES "@dev" --no-update
-    fi
-  fi
-
   composer config --no-interaction allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
   composer config --no-interaction allow-plugins.laminas/laminas-dependency-plugin true
   composer config --no-interaction allow-plugins.magento/* true
-}
 
-composer_install () {
   if [ -z "${SKIP_DEPENDENCIES}" ]; then
-    composer_setup
-    composer install
+    if [ ! -f "composer.lock" ]; then
+        echo "composer.lock does not exist."
+        composer create-project --repository-url="$REPOSITORY_URL" "$MAGENTO_VERSION" /magento2 --no-install
+        cd /magento2
+
+      if [[ "$USE_VENDOR_CACHE" == "true" && -d "$VENDOR_CACHE_DIR/vendor" ]]; then
+        echo "Using vendor cache"
+        cp -r $VENDOR_CACHE_DIR/vendor vendor
+        cp $VENDOR_CACHE_DIR/composer.lock composer.lock
+
+        # Delete magento2-base module so during composer install the package is installed again which should copy all
+        # necessary project files like app, bin, etc. There maybe a better way to do this via composer run-script but this
+        # is also works.
+        rm -rf vendor/magento/magento2-base
+      fi
+
+      if [[ ! -z "${COMPOSER_PACKAGES}" ]]; then
+        # Merge the repository object from module's composer.json into magento's composer.json
+        jq --slurpfile app $BITBUCKET_CLONE_DIR/composer.json '.repositories += [$app[0].repositories[]?]' composer.json \
+        > merged.composer.json
+
+        jq --arg path $BITBUCKET_CLONE_DIR '.repositories += [{ type: "path", "url": $path}]' merged.composer.json > composer.json
+
+        # Do not load the package we're testing from cache!
+        composer require $COMPOSER_PACKAGES "@dev" --no-update --no-cache
+      fi
+    fi
+    
     cat composer.json
+    composer install
   else 
     echo "SKIP_DEPENDENCIES is set, so composer install will not execute."
   fi
+
+  if [[ "$USE_VENDOR_CACHE" == "true" ]]; then
+    mkdir -p $VENDOR_CACHE_DIR && cp -r vendor composer.lock $VENDOR_CACHE_DIR/
+  fi
 }
+
+run_integration_tests () {
+  composer_setup
 
 run_integration_tests () {
   composer_install
@@ -91,8 +110,7 @@ run_integration_tests () {
 
 run_rest_api_tests () {
   create_database_schema magento_functional_tests
-
-  composer_install
+  composer_setup
 
   cd dev/tests/api-functional
   cp phpunit_rest.xml.dist phpunit_rest.xml
@@ -126,8 +144,7 @@ run_rest_api_tests () {
 
 run_graphql_tests () {
   create_database_schema magento_graphql_tests
-
-  composer_install
+  composer_setup
 
   cd dev/tests/api-functional
 
