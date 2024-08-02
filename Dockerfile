@@ -1,4 +1,5 @@
-FROM php:8.2-alpine
+ARG PHP_VERSION
+FROM php:${PHP_VERSION}-cli-alpine
 
 RUN apk add mariadb-client procps git jq --no-cache
 
