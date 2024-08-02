@@ -51,11 +51,19 @@ composer_setup () {
   composer config --no-interaction allow-plugins.magento/* true
 }
 
-run_integration_tests () {
-  composer_setup
-  cat composer.json
-  composer install
+composer_install () {
+  if [ -z "${SKIP_DEPENDENCIES}" ]; then
+    composer_setup
+    composer install
+    cat composer.json
+  else 
+    echo "SKIP_DEPENDENCIES is set, so composer install will not execute."
+  fi
+}
 
+run_integration_tests () {
+  composer_install
+  
   cd dev/tests/integration
   cat etc/install-config-mysql.php.dist
 
@@ -84,9 +92,8 @@ run_integration_tests () {
 run_rest_api_tests () {
   create_database_schema magento_functional_tests
 
-  composer_setup
-  cat composer.json
-  composer install
+  composer_install
+
   cd dev/tests/api-functional
   cp phpunit_rest.xml.dist phpunit_rest.xml
   cp config/install-config-mysql.php.dist config/install-config-mysql.php
@@ -120,9 +127,8 @@ run_rest_api_tests () {
 run_graphql_tests () {
   create_database_schema magento_graphql_tests
 
-  composer_setup
-  cat composer.json
-  composer install
+  composer_install
+
   cd dev/tests/api-functional
 
   cp phpunit_graphql.xml.dist phpunit_graphql.xml

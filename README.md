@@ -28,6 +28,7 @@ a new magento project.
 | `GROUP`                 | (Optional) Specify test group(s) to run. Example: `--group inventory,indexer_dimension` <br> See phpunit [@group annotation](https://phpunit.readthedocs.io/en/9.5/annotations.html#group)                     |
 | `TESTS_PATH`            | (Optional) Specify a test path to run. Example `./app/code/The/Module`                                                                                                                                         |
 | `COMPOSER_PACKAGES`     | (Optional) Specify any packages to require. Used when testing against a stand-alone module. Example `aligent/magento-async-events`                                                                             |
+| `SKIP_DEPENDENCIES`     | (Optional) Skip installation of composer dependencies, if set this assumes you have performed `composer install` outside of the pipe.                                                                          |
 
 ## Using private packages
 When you are testing a standalone module that has dependencies which are private, you may want to include private
@@ -145,8 +146,8 @@ $ PROJECT_DIR=~/projects/my-test-project
 4. Start the environment, providing overridden environment variables or your custom `.env` file:
 
 ```shell
-$ docker compose --env_file path/to/env_file up -d
-$ docker compose exec magento sh
+$ docker compose --env-file path/to/env_file up -d
+$ docker compose --env-file path/to/env_file exec --workdir=/root/app magento sh
 ```
 
 6. Make sure that `/pipe.sh` is executable.
@@ -158,5 +159,5 @@ $ docker compose exec magento sh
 7. Invoke the pipe
 
 ```shell
-/# ./pipe.sh
+/# /pipe.sh
 ```
