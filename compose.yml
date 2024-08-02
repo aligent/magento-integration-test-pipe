@@ -17,7 +17,10 @@ services:
             RABBITMQ_DEFAULT_USER: guest
             RABBITMQ_DEFAULT_PASS: guest
     magento:
-        build: .
+        build:
+            context: .
+            args:
+                PHP_VERSION: ${PHP_VERSION}
         entrypoint: /bin/sh
         tty: true
         volumes:
