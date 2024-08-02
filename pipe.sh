@@ -79,10 +79,7 @@ composer_setup () {
 
 run_integration_tests () {
   composer_setup
-
-run_integration_tests () {
-  composer_install
-  
+ 
   cd dev/tests/integration
   cat etc/install-config-mysql.php.dist
 
