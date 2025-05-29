@@ -4,7 +4,7 @@ RUN apk add mariadb-client procps git jq --no-cache
 
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
-RUN install-php-extensions gd bcmath zip intl xsl pdo_mysql soap sockets @composer
+RUN install-php-extensions gd bcmath zip intl xsl pdo_mysql soap sockets ftp @composer
 
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
